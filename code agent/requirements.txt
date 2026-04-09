@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pytest
+coverage
+google-genai
+python-multipart

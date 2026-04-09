@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Test Generator System</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--panel);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            padding: 2rem;
+            gap: 2rem;
+        }
+
+        .col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .panel {
+            background-color: var(--panel);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background-color: rgba(99, 102, 241, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:disabled {
+            background-color: var(--border);
+            cursor: not-allowed;
+        }
+
+        pre {
+            background-color: #0d1117;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            color: #c9d1d9;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+            margin: 0;
+            flex: 1;
+            min-height: 200px;
+        }
+
+        .metrics {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .metric-card {
+            background-color: var(--bg);
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            flex: 1;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+
+        .metric-value.high { color: var(--success); }
+        .metric-value.medium { color: var(--warning); }
+        .metric-value.low { color: var(--error); }
+
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background-color: var(--border);
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🧪 AI Test Generator System</h1>
+    </header>
+
+    <div class="container">
+        <!-- Left Column: Upload and Analysis -->
+        <div class="col">
+            <div class="panel">
+                <div class="panel-header">Upload Python File</div>
+                <div class="upload-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📄</div>
+                    <div id="fileStatus">Click or drag and drop a .py file here</div>
+                    <input type="file" id="fileInput" accept=".py">
+                </div>
+                <button class="btn" id="generateBtn" style="margin-top: 1rem;" disabled>Generate Tests</button>
+            </div>
+
+            <div class="panel" style="flex: 1;">
+                <div class="panel-header">AST Analysis</div>
+                <div id="analysisContent" style="color: var(--text-muted);">
+                    Waiting for file upload...
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Results -->
+        <div class="col" style="flex: 2;">
+            <div class="panel" id="loadingPanel" style="display: none; flex: 1; justify-content: center;">
+                <div id="loading" style="display: block;">
+                    <div class="spinner"></div>
+                    <h3>Generating Robust Test Cases...</h3>
+                    <p style="color: var(--text-muted);">Parsing AST, generating via LLM, and computing coverage...</p>
+                </div>
+            </div>
+
+            <div class="panel" id="resultsPanel" style="display: none; flex: 1;">
+                <div class="panel-header">Generation Results</div>
+                
+                <div class="metrics" id="metricsDisplay">
+                    <!-- Metrics injected here -->
+                </div>
+
+                <div class="panel-header" style="font-size: 1rem; border: none;">Generated test_generated.py</div>
+                <pre id="codePlaceholder"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const dropArea = document.getElementById('dropArea');
+        const fileStatus = document.getElementById('fileStatus');
+        const generateBtn = document.getElementById('generateBtn');
+        const analysisContent = document.getElementById('analysisContent');
+        
+        let selectedFile = null;
+
+        // File Selection Logic
+        fileInput.addEventListener('change', (e) => {
+            if(e.target.files.length) {
+                selectedFile = e.target.files[0];
+                fileStatus.textContent = selectedFile.name;
+                generateBtn.disabled = false;
+            }
+        });
+
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.classList.add('dragover');
+        });
+
+        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'));
+
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+             dropArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                selectedFile = e.dataTransfer.files[0];
+                fileStatus.textContent = selectedFile.name;
+                generateBtn.disabled = false;
+            }
+        });
+
+        // Generation API Logic
+        generateBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            document.getElementById('loadingPanel').style.display = 'flex';
+            document.getElementById('resultsPanel').style.display = 'none';
+            generateBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/generate-tests', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                document.getElementById('loadingPanel').style.display = 'none';
+                document.getElementById('resultsPanel').style.display = 'flex';
+
+                if (data.status === 'success') {
+                    // Render Analysis
+                    let html = `<div><strong>Classes:</strong></div>`;
+                    data.analysis.classes.forEach(c => html += `<div class="badge">class ${c.name}</div>`);
+                    html += `<div style="margin-top:0.5rem;"><strong>Functions:</strong></div>`;
+                    data.analysis.functions.forEach(f => html += `<div class="badge">def ${f.name}()</div>`);
+                    if(data.analysis.functions.length === 0 && data.analysis.classes.length === 0) {
+                        html += `<div class="badge" style="background:#ef4444">No functions found</div>`;
+                    }
+                    
+                    analysisContent.innerHTML = html;
+
+                    // Render Code
+                    document.getElementById('codePlaceholder').textContent = data.test_code;
+
+                    // Render Metrics
+                    const cov = parseFloat(data.coverage);
+                    let covClass = 'high';
+                    if (cov < 80) covClass = 'medium';
+                    if (cov < 50) covClass = 'low';
+
+                    document.getElementById('metricsDisplay').innerHTML = `
+                        <div class="metric-card">
+                            <div>Coverage</div>
+                            <div class="metric-value ${covClass}">${data.coverage}%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div>Missing Lines</div>
+                            <div class="metric-value ${data.missing_lines.length > 0 ? 'medium' : 'high'}">${data.missing_lines.length}</div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('codePlaceholder').textContent = data.message || "An error occurred.";
+                }
+
+            } catch (err) {
+                document.getElementById('loadingPanel').style.display = 'none';
+                document.getElementById('resultsPanel').style.display = 'flex';
+                document.getElementById('codePlaceholder').textContent = "Error: " + err;
+            } finally {
+                generateBtn.disabled = false;
+            }
+        });
+
+    </script>
+</body>
+</html>
